@@ -126,6 +126,17 @@ impl Drop for Module {
     }
 }
 
+/// Wrapper around `assert_reference_ir` that does not require the caller to specify the maximum
+/// index for qubits and results.
+pub(crate) fn assert_reference_ir(
+    id: &str,
+    required_num_qubits: u64,
+    required_num_results: u64,
+    build: impl Fn(LLVMBuilderRef),
+) {
+    assert_reference_ir_with_max_indexes(id, required_num_qubits, required_num_results, None, None, build);
+}
+
 /// Compares generated IR against reference files in the "resources/tests" folder. If changes
 /// to code generation break the tests:
 ///
@@ -133,15 +144,18 @@ impl Drop for Module {
 ///    regenerate the reference files.
 /// 2. Review the changes and make sure they look reasonable.
 /// 3. Unset the environment variable and run the tests again to confirm that they pass.
-pub(crate) fn assert_reference_ir(
+pub(crate) fn assert_reference_ir_with_max_indexes(
     id: &str,
     required_num_qubits: u64,
     required_num_results: u64,
+    max_qubit_index: Option<u64>,
+    max_result_index: Option<u64>,
     build: impl Fn(LLVMBuilderRef),
 ) {
     let (prefix, name) = split_id(id);
     let c_name = &CString::new(name).unwrap();
-    let actual_ir = build_ir(c_name, required_num_qubits, required_num_results, build).unwrap();
+    let actual_ir = build_ir(c_name, required_num_qubits, required_num_results,
+                             max_qubit_index, max_result_index, build).unwrap();
 
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.push("resources");
@@ -167,6 +181,8 @@ fn build_ir(
     name: &CStr,
     required_num_qubits: u64,
     required_num_results: u64,
+    max_qubit_index: Option<u64>,
+    max_result_index: Option<u64>,
     build: impl Fn(LLVMBuilderRef),
 ) -> Result<Message, Message> {
     unsafe {
@@ -179,6 +195,8 @@ fn build_ir(
             required_num_results,
             "custom",
             "",
+            max_qubit_index,
+            max_result_index,
         );
 
         let builder = Builder::new(&context);

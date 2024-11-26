@@ -51,6 +51,8 @@ pub unsafe fn entry_point(
     required_num_results: u64,
     qir_profiles: &str,
     output_labeling_schema: &str,
+    max_qubit_index: Option<u64>,
+    max_result_index: Option<u64>,
 ) -> LLVMValueRef {
     let context = LLVMGetModuleContext(module);
     let void = LLVMVoidTypeInContext(context);
@@ -84,6 +86,24 @@ pub unsafe fn entry_point(
         output_labeling_schema.as_bytes(),
         LLVMAttributeFunctionIndex,
     );
+
+    if max_qubit_index.is_some() {
+        add_string_attribute(
+            function,
+            b"maxQubitIndex",
+            max_qubit_index.unwrap().to_string().as_bytes(),
+            LLVMAttributeFunctionIndex,
+        );
+    }
+
+    if max_result_index.is_some() {
+        add_string_attribute(
+            function,
+            b"maxResultIndex",
+            max_result_index.unwrap().to_string().as_bytes(),
+            LLVMAttributeFunctionIndex,
+        );
+    }
 
     function
 }
@@ -152,6 +172,32 @@ pub unsafe fn required_num_results(function: LLVMValueRef) -> Option<u64> {
                 })?;
         let mut len = 0;
         let value = LLVMGetStringAttributeValue(required_results.as_ptr(), &mut len);
+        let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
+        str::from_utf8(value).ok()?.parse().ok()
+    } else {
+        None
+    }
+}
+
+pub unsafe fn max_qubit_index(function: LLVMValueRef) -> Option<u64> {
+    if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
+        let max_qubit_index =
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"maxQubitIndex")?;
+        let mut len = 0;
+        let value = LLVMGetStringAttributeValue(max_qubit_index.as_ptr(), &mut len);
+        let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
+        str::from_utf8(value).ok()?.parse().ok()
+    } else {
+        None
+    }
+}
+
+pub unsafe fn max_result_index(function: LLVMValueRef) -> Option<u64> {
+    if LLVMGetValueKind(function) == LLVMValueKind::LLVMFunctionValueKind {
+        let max_result_index =
+            get_string_attribute(function, LLVMAttributeFunctionIndex, b"maxResultIndex")?;
+        let mut len = 0;
+        let value = LLVMGetStringAttributeValue(max_result_index.as_ptr(), &mut len);
         let value = slice::from_raw_parts(value.cast(), len.try_into().unwrap());
         str::from_utf8(value).ok()?.parse().ok()
     } else {
@@ -317,6 +363,7 @@ unsafe fn is_byte_string(ty: LLVMTypeRef) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::tests::assert_reference_ir;
+    use crate::tests::assert_reference_ir_with_max_indexes;
 
     #[test]
     fn zero_required_qubits_results() {
@@ -336,6 +383,16 @@ mod tests {
     #[test]
     fn many_required_qubits_results() {
         assert_reference_ir("module/many_required_qubits_results", 5, 7, |_| ());
+    }
+
+    #[test]
+    fn max_qubit_index_one() {
+        assert_reference_ir_with_max_indexes("module/max_qubit_index_one", 2, 0, Some(1), None, |_| ());
+    }
+
+    #[test]
+    fn max_result_index_one() {
+        assert_reference_ir_with_max_indexes("module/max_result_index_one", 0, 2, None, Some(1), |_| ());
     }
 }
 

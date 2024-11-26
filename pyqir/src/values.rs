@@ -804,6 +804,28 @@ pub(crate) fn required_num_results(function: PyRef<Function>) -> Option<u64> {
     unsafe { values::required_num_results(function.into_super().into_super().as_ptr()) }
 }
 
+/// If the function declares a maximum qubit index, extracts it.
+///
+/// :param Function function: The function.
+/// :returns: The maximum qubit index.
+/// :rtype: Optional[int]
+#[pyfunction]
+#[pyo3(text_signature = "(function)")]
+pub(crate) fn max_qubit_index(function: PyRef<Function>) -> Option<u64> {
+    unsafe { values::max_qubit_index(function.into_super().into_super().as_ptr()) }
+}
+
+/// If the function declares a maximum result index, extracts it.
+///
+/// :param Function function: The function.
+/// :returns: The required maximum result index.
+/// :rtype: Optional[int]
+#[pyfunction]
+#[pyo3(text_signature = "(function)")]
+pub(crate) fn max_result_index(function: PyRef<Function>) -> Option<u64> {
+    unsafe { values::max_result_index(function.into_super().into_super().as_ptr()) }
+}
+
 /// Creates a module with required QIR module flag metadata
 ///
 /// :param Context context: The parent context.

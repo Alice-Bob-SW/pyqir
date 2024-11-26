@@ -20,10 +20,11 @@ use crate::{
     },
     values::{
         add_string_attribute, dynamic_qubit_management, dynamic_result_management,
-        extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly,
-        qir_major_version, qir_minor_version, qir_module, qubit, qubit_id, r#const,
-        required_num_qubits, required_num_results, result, result_id, Attribute, AttributeList,
-        AttributeSet, BasicBlock, Constant, FloatConstant, Function, IntConstant, Value,
+        extract_byte_string, global_byte_string, is_entry_point, is_interop_friendly, max_qubit_index,
+        max_result_index, qir_major_version, qir_minor_version, qir_module, qubit, qubit_id,
+        r#const, required_num_qubits, required_num_results, result, result_id, Attribute,
+        AttributeList, AttributeSet, BasicBlock, Constant, FloatConstant, Function, IntConstant, 
+        Value,
     },
 };
 use pyo3::prelude::*;
@@ -83,6 +84,8 @@ fn _native(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(result_id, m)?)?;
     m.add_function(wrap_pyfunction!(result_type, m)?)?;
     m.add_function(wrap_pyfunction!(result, m)?)?;
+    m.add_function(wrap_pyfunction!(max_qubit_index, m)?)?;
+    m.add_function(wrap_pyfunction!(max_result_index, m)?)?;
 
     // qis
     m.add_function(wrap_pyfunction!(barrier, m)?)?;
